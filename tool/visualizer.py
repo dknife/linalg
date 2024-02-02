@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
+
 def axis2d(x=[-1, 1], y=[-1, 1]) :
     fig = plt.figure(figsize = (5, 5))
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
@@ -71,3 +72,45 @@ def draw_vec3d(axis, v, color='r', start_from=None, alpha=1.0, label=None):
 
         if label is not None:
             axis.text(*(start_from + v/2), label, fontsize=10)
+
+
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+def draw_polygons(ax, polygon_list, facecolors, edgecolors='black', alpha=0.8):
+    polys = Poly3DCollection(polygon_list, facecolors=facecolors, edgecolors=edgecolors, alpha=alpha)
+    ax.add_collection3d(polys)
+
+def draw_mat22(ax2d, M, label=None):
+    # 2x2 행렬 시각화
+    # 열벡터 가시화
+    u, v = M[:, 0], M[:, 1]
+    draw_vec2d(ax2d, u, color='r')
+    draw_vec2d(ax2d, v, color='g')
+    draw_vec2d(ax2d, u, color='gray', start_from = v, alpha=0.2)
+    draw_vec2d(ax2d, v, color='gray', start_from = u, alpha=0.2)
+
+    if label is not None:
+        ax2d.text(*(u+v), label, fontsize=10)
+
+def draw_mat33(ax3d, M, label=None):
+    # 3x3 행렬 시각화
+    # 열벡터 가시화
+    u, v, w = M[:, 0], M[:, 1], M[:, 2]
+    draw_vec3d(ax3d, u, color='r')
+    draw_vec3d(ax3d, v, color='g')
+    draw_vec3d(ax3d, w, color='b')
+
+    draw_vec3d(ax3d, u, color='gray', start_from = v, alpha=0.2)
+    draw_vec3d(ax3d, u, color='gray', start_from = w, alpha=0.2)
+    draw_vec3d(ax3d, u, color='gray', start_from = v+w, alpha=0.2)
+
+    draw_vec3d(ax3d, v, color='gray', start_from = u, alpha=0.2)
+    draw_vec3d(ax3d, v, color='gray', start_from = w, alpha=0.2)
+    draw_vec3d(ax3d, v, color='gray', start_from = u+w, alpha=0.2)
+
+    draw_vec3d(ax3d, w, color='gray', start_from = u, alpha=0.2)
+    draw_vec3d(ax3d, w, color='gray', start_from = v, alpha=0.2)
+    draw_vec3d(ax3d, w, color='gray', start_from = u+v, alpha=0.2)
+
+    if label is not None:
+        ax3d.text(*(u+v+w), label, fontsize=10)
