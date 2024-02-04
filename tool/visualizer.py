@@ -74,6 +74,21 @@ def draw_vec3d(axis, v, color='r', start_from=None, alpha=1.0, label=None):
             axis.text(*(start_from + v/2), label, fontsize=10)
 
 
+def draw_points(my_axis, points_list, labels=None, color='red'):
+    for i in range(len(points_list)):
+        my_axis.scatter(points_list[i][0], points_list[i][1], color=color)        
+        my_axis.text(*(points_list[i]), labels[i], fontsize=10)
+
+def draw_space_mat22(ax2d, M, label=None, color='gray'):
+    draw_mat22(ax2d, M, label=label)
+    u, v = M[:, 0], M[:, 1]
+
+    for i in range(-10, 10):
+        draw_vec2d(ax2d, v*20, color=color, start_from = u*i+v*(-10), alpha=0.2)
+        draw_vec2d(ax2d, u*20, color=color, start_from = v*i+u*(-10), alpha=0.2)
+
+
+
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 def draw_polygons(ax, polygon_list, facecolors, edgecolors='black', alpha=0.8):
