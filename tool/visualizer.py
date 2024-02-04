@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import math
 
 
-def axis2d(x=[-1, 1], y=[-1, 1]) :
+def axis2d(x=[-1, 1], y=[-1, 1], grid=True) :
     fig = plt.figure(figsize = (5, 5))
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
     ax.set_xlim([x[0], x[1]]); ax.set_ylim([y[0], y[1]])
     ax.set_xlabel('x'); ax.set_ylabel('y')
     plt.axhline(0, color='gray', linewidth=5, alpha = 0.25)
     plt.axvline(0, color='gray', linewidth=5, alpha = 0.25)
-    ax.grid(True)
+    ax.grid(grid)
     return ax
 
 def draw_vec2d(axis, v, color='r', start_from = None, alpha = 1.0, label=None):
