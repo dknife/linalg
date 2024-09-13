@@ -129,3 +129,18 @@ def draw_mat33(ax3d, M, label=None):
 
     if label is not None:
         ax3d.text(*(u+v+w), label, fontsize=10)
+
+
+def draw_circle(ax, center, radius, color='blue'):
+  """
+  Draws a circle on the given axes.
+
+  Args:
+    ax: The matplotlib axes object.
+    center: A tuple containing the x and y coordinates of the center.
+    radius: The radius of the circle.
+    color: The color of the circle.
+  """
+  circle = plt.Circle(center, radius, color=color, fill=False)
+  ax.add_patch(circle)
+
