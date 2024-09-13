@@ -131,7 +131,7 @@ def draw_mat33(ax3d, M, label=None):
         ax3d.text(*(u+v+w), label, fontsize=10)
 
 
-def draw_circle(ax, center, radius, color='blue'):
+def draw_circle(ax, center=[0,0], radius=1.0, color='blue'):
   """
   Draws a circle on the given axes.
 
