@@ -73,7 +73,7 @@ def draw_vec3d(axis, v, color='r', start_from=None, alpha=1.0, label=None):
         if label is not None:
             axis.text(*(start_from + v/2), label, fontsize=10)
 
-def draw_points_in_matrix22(axis, M, color='red') :
+def draw_points_in_matrix(axis, M, color='red') :
     x = M[0, :]
     y = M[1, :]
     axis.scatter(x, y, color=color) 
