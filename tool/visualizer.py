@@ -74,14 +74,24 @@ def draw_vec3d(axis, v, color='r', start_from=None, alpha=1.0, label=None):
             axis.text(*(start_from + v/2), label, fontsize=10)
 
 def draw_points_in_matrix(axis, M, color='red') :
-    x = M[0, :]
-    y = M[1, :]
-    axis.scatter(x, y, color=color) 
+    if M.shape[0] == 2 :
+        x = M[0, :]
+        y = M[1, :]
+        axis.scatter(x, y, color=color) 
+    elif M.shape[0] == 3 :
+        x = M[0, :]
+        y = M[1, :]
+        z = M[2, :]
+        axis.scatter(x, y, z, color=color) 
 
-def draw_points(my_axis, points_list, labels=None, color='red'):
+def draw_points(my_axis, points_list, labels=None, color='red'):    
     for i in range(len(points_list)):
-        my_axis.scatter(points_list[i][0], points_list[i][1], color=color)        
+        if points_list[0].shape[0] == 2:
+            my_axis.scatter(points_list[i][0], points_list[i][1], color=color)        
+        elif points_list[0].shape[0] == 3:        
+            my_axis.scatter(points_list[i][0], points_list[i][1], points_list[i][2], color=color)        
         my_axis.text(*(points_list[i]), labels[i], fontsize=10)
+    
 
 def draw_space_mat22(ax2d, M, label=None, color='gray'):
     draw_mat22(ax2d, M, label=label)
