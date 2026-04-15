@@ -241,7 +241,7 @@ def draw_vec3d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
 # Points
 #####################################################
 
-def draw_points(fig, points_list, labels=None, color='red', size=5):
+def draw_points(fig, points_list, labels=None, color='red', size=2):
     """
     Draw a list of 2D or 3D points.
     2D points are placed on z=0.
@@ -259,7 +259,7 @@ def draw_points(fig, points_list, labels=None, color='red', size=5):
     ))
 
 
-def draw_points_in_matrix(fig, M, color='red', size=5):
+def draw_points_in_matrix(fig, M, color='red', size=2):
     """
     Draw points stored as columns of matrix M (2xN or 3xN).
     2xN matrices are placed on z=0.
