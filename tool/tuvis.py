@@ -443,6 +443,107 @@ def draw_circle_2d(fig, center=(0,0), radius=1.0, color='blue', alpha=0.5, n_seg
 
 
 #####################################################
+# Line / Ray / Segment
+#####################################################
+
+def draw_line(fig, p1, p2, label=None, type='segment', color='red', alpha=0.5,
+              scale=2, cone_radius=0.05):
+    """
+    Draw a line defined by two points.
+    Args:
+        fig   : plotly Figure
+        p1    : start point (array-like, length 2 or 3)
+        p2    : end point (array-like, length 2 or 3)
+        label : text label at the midpoint of the original segment
+        type  : 'segment' | 'ray' | 'line'
+        color : line color
+        alpha : opacity
+        scale : extension multiplier for ray/line (default: 2)
+        cone_radius : arrowhead size for ray/line endpoints
+    """
+    p1 = _to_3d(p1)
+    p2 = _to_3d(p2)
+    d = p2 - p1
+    length = np.linalg.norm(d)
+    if length < 1e-10:
+        return
+    d_unit = d / length
+
+    if type == 'segment':
+        start = p1
+        end = p2
+    elif type == 'ray':
+        start = p1
+        end = p1 + d * scale
+    elif type == 'line':
+        mid = (p1 + p2) / 2.0
+        half = length * scale / 2.0
+        start = mid - d_unit * half
+        end = mid + d_unit * half
+    else:
+        start = p1
+        end = p2
+
+    # main line
+    fig.add_trace(go.Scatter3d(
+        x=[start[0], end[0]],
+        y=[start[1], end[1]],
+        z=[start[2], end[2]],
+        mode='lines',
+        line=dict(color=color, width=4),
+        opacity=alpha,
+        showlegend=False,
+    ))
+
+    # arrowheads for ray / line
+    cone_len = length * 0.1
+    if type == 'ray':
+        cone_base = end - d_unit * cone_len
+        cx, cy, cz, ci, cj, ck = _cone_mesh(end, cone_base, radius=cone_radius)
+        if cx is not None:
+            fig.add_trace(go.Mesh3d(
+                x=cx, y=cy, z=cz, i=ci, j=cj, k=ck,
+                color=color, opacity=alpha, showlegend=False,
+            ))
+    elif type == 'line':
+        # arrow at end (p1 -> p2 direction)
+        cone_base_fwd = end - d_unit * cone_len
+        cx, cy, cz, ci, cj, ck = _cone_mesh(end, cone_base_fwd, radius=cone_radius)
+        if cx is not None:
+            fig.add_trace(go.Mesh3d(
+                x=cx, y=cy, z=cz, i=ci, j=cj, k=ck,
+                color=color, opacity=alpha, showlegend=False,
+            ))
+        # arrow at start (p2 -> p1 direction)
+        cone_base_bwd = start + d_unit * cone_len
+        cx, cy, cz, ci, cj, ck = _cone_mesh(start, cone_base_bwd, radius=cone_radius)
+        if cx is not None:
+            fig.add_trace(go.Mesh3d(
+                x=cx, y=cy, z=cz, i=ci, j=cj, k=ck,
+                color=color, opacity=alpha, showlegend=False,
+            ))
+
+    # endpoint markers
+    fig.add_trace(go.Scatter3d(
+        x=[p1[0], p2[0]], y=[p1[1], p2[1]], z=[p1[2], p2[2]],
+        mode='markers',
+        marker=dict(size=3, color=color),
+        opacity=alpha,
+        showlegend=False,
+    ))
+
+    # label
+    if label is not None:
+        mid = (p1 + p2) / 2.0
+        fig.add_trace(go.Scatter3d(
+            x=[mid[0]], y=[mid[1]], z=[mid[2]],
+            mode='text', text=[label],
+            textfont=dict(size=12, color=color),
+            showlegend=False,
+        ))
+
+
+#####################################################
 # Plane (3 points)
 #####################################################
 
@@ -540,7 +641,7 @@ def draw_bounding_sphere(fig, center, radius, color='blue', alpha=0.3):
         x=[center[0]], y=[center[1]], z=[center[2]],
         mode='markers+text',
         marker=dict(size=3, color='red'),
-        text=[f'C={tuple(center)}<br>r={radius}'],
+        text=[f'C=({center[0]:.4g}, {center[1]:.4g}, {center[2]:.4g})<br>r={radius:.4g}'],
         textposition='top center',
         textfont=dict(size=9),
         showlegend=False,
@@ -595,7 +696,7 @@ def draw_aabb(fig, min_pt, max_pt, color='green', alpha=0.2):
         x=[center[0]], y=[center[1]], z=[center[2]],
         mode='markers+text',
         marker=dict(size=3, color='red'),
-        text=[f'min={tuple(min_pt)}<br>max={tuple(max_pt)}'],
+        text=[f'min=({min_pt[0]:.4g}, {min_pt[1]:.4g}, {min_pt[2]:.4g})<br>max=({max_pt[0]:.4g}, {max_pt[1]:.4g}, {max_pt[2]:.4g})'],
         textposition='top center',
         textfont=dict(size=9),
         showlegend=False,
