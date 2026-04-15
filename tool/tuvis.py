@@ -6,6 +6,79 @@ import plotly.graph_objects as go
 # Figure creation
 #####################################################
 
+def figure2d(x=[-1,1], y=[-1,1], title='', width=600, height=600,
+             bg_color='rgba(248, 250, 255, 0.3)'):
+    """
+    Create a 2D figure using plotly's 3D scene.
+    Draws on the z=0 plane with a top-down camera.
+    Args:
+        x        : [xmin, xmax]
+        y        : [ymin, ymax]
+        title    : figure title
+        bg_color : background color of the xy-plane
+    """
+    fig = go.Figure()
+
+    # xy-plane background quad
+    cx = [x[0], x[1], x[1], x[0]]
+    cy = [y[0], y[0], y[1], y[1]]
+    cz = [0, 0, 0, 0]
+    fig.add_trace(go.Mesh3d(
+        x=cx, y=cy, z=cz,
+        i=[0, 0], j=[1, 2], k=[2, 3],
+        color=bg_color, opacity=1.0,
+        showlegend=False,
+        hoverinfo='skip',
+    ))
+
+    # axis lines on z=0
+    fig.add_trace(go.Scatter3d(
+        x=[x[0], x[1]], y=[0, 0], z=[0, 0],
+        mode='lines', line=dict(color='gray', width=3),
+        opacity=0.4, showlegend=False, hoverinfo='skip',
+    ))
+    fig.add_trace(go.Scatter3d(
+        x=[0, 0], y=[y[0], y[1]], z=[0, 0],
+        mode='lines', line=dict(color='gray', width=3),
+        opacity=0.4, showlegend=False, hoverinfo='skip',
+    ))
+
+    # grid lines
+    for gx in range(int(np.ceil(x[0])), int(np.floor(x[1])) + 1):
+        fig.add_trace(go.Scatter3d(
+            x=[gx, gx], y=[y[0], y[1]], z=[0, 0],
+            mode='lines', line=dict(color='lightgray', width=1),
+            opacity=0.3, showlegend=False, hoverinfo='skip',
+        ))
+    for gy in range(int(np.ceil(y[0])), int(np.floor(y[1])) + 1):
+        fig.add_trace(go.Scatter3d(
+            x=[x[0], x[1]], y=[gy, gy], z=[0, 0],
+            mode='lines', line=dict(color='lightgray', width=1),
+            opacity=0.3, showlegend=False, hoverinfo='skip',
+        ))
+
+    zspan = max(x[1]-x[0], y[1]-y[0]) * 0.01
+    fig.update_layout(
+        title=title,
+        width=width, height=height,
+        scene=dict(
+            xaxis=dict(range=x, title='x'),
+            yaxis=dict(range=y, title='y'),
+            zaxis=dict(range=[-zspan, zspan], visible=False),
+            aspectmode='manual',
+            aspectratio=dict(x=1, y=(y[1]-y[0])/(x[1]-x[0]), z=0.001),
+            camera=dict(
+                eye=dict(x=0, y=0, z=2.0),
+                center=dict(x=0, y=0, z=0),
+                up=dict(x=0, y=1, z=0),
+                projection=dict(type='orthographic'),
+            ),
+        ),
+        margin=dict(l=0, r=0, t=40, b=0),
+    )
+    return fig
+
+
 def figure3d(x=[-1,1], y=[-1,1], z=[-1,1], title='', width=600, height=600):
     """
     Create a 3D plotly figure with equal-aspect axes.
@@ -34,7 +107,6 @@ def setCam(fig, eye, target=(0,0,0), up=(0,0,1)):
     target = np.array(target, dtype=float)
     up = np.array(up, dtype=float)
 
-    # plotly expects eye in scene-coordinate scale
     fig.update_layout(scene_camera=dict(
         eye=dict(x=eye[0], y=eye[1], z=eye[2]),
         center=dict(x=target[0], y=target[1], z=target[2]),
@@ -64,7 +136,6 @@ def _cone_mesh(tip, base, radius=0.06, n=12):
     theta = np.linspace(0, 2*np.pi, n+1)[:-1]
     ring = np.array([base + radius*(np.cos(t)*perp + np.sin(t)*perp2) for t in theta])
 
-    # vertices: ring points + tip + base center
     verts = np.vstack([ring, [tip], [base]])
     tip_idx = n
     base_idx = n + 1
@@ -72,12 +143,39 @@ def _cone_mesh(tip, base, radius=0.06, n=12):
     i_list, j_list, k_list = [], [], []
     for idx in range(n):
         nxt = (idx + 1) % n
-        # side face
         i_list.append(idx); j_list.append(nxt); k_list.append(tip_idx)
-        # bottom face
         i_list.append(idx); j_list.append(nxt); k_list.append(base_idx)
 
     return verts[:,0], verts[:,1], verts[:,2], i_list, j_list, k_list
+
+
+def _to_3d(v):
+    """Convert a 2D vector to 3D by appending z=0."""
+    v = np.array(v, dtype=float)
+    if v.shape == (2,):
+        return np.array([v[0], v[1], 0.0])
+    return v
+
+
+def draw_vec2d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
+               cone_ratio=0.12, cone_radius=0.04):
+    """
+    Draw a 2D vector arrow on the z=0 plane.
+    Args:
+        fig        : plotly Figure
+        v          : vector (array-like, length 2)
+        color      : color string
+        start_from : origin point (default: [0,0])
+        alpha      : opacity
+        label      : text label at midpoint
+    """
+    v3 = _to_3d(v)
+    if start_from is None:
+        s3 = np.zeros(3)
+    else:
+        s3 = _to_3d(start_from)
+    draw_vec3d(fig, v3, color=color, start_from=s3, alpha=alpha, label=label,
+               cone_ratio=cone_ratio, cone_radius=cone_radius)
 
 
 def draw_vec3d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
@@ -145,9 +243,10 @@ def draw_vec3d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
 
 def draw_points(fig, points_list, labels=None, color='red', size=5):
     """
-    Draw a list of 3D points.
+    Draw a list of 2D or 3D points.
+    2D points are placed on z=0.
     """
-    pts = np.array([np.array(p) for p in points_list])
+    pts = np.array([_to_3d(p) for p in points_list])
     text = labels if labels else [None] * len(pts)
     fig.add_trace(go.Scatter3d(
         x=pts[:,0], y=pts[:,1], z=pts[:,2],
@@ -162,19 +261,52 @@ def draw_points(fig, points_list, labels=None, color='red', size=5):
 
 def draw_points_in_matrix(fig, M, color='red', size=5):
     """
-    Draw points stored as columns of matrix M (3xN).
+    Draw points stored as columns of matrix M (2xN or 3xN).
+    2xN matrices are placed on z=0.
     """
-    fig.add_trace(go.Scatter3d(
-        x=M[0,:], y=M[1,:], z=M[2,:],
-        mode='markers',
-        marker=dict(size=size, color=color),
-        showlegend=False,
-    ))
+    if M.shape[0] == 2:
+        fig.add_trace(go.Scatter3d(
+            x=M[0,:], y=M[1,:], z=np.zeros(M.shape[1]),
+            mode='markers',
+            marker=dict(size=size, color=color),
+            showlegend=False,
+        ))
+    elif M.shape[0] == 3:
+        fig.add_trace(go.Scatter3d(
+            x=M[0,:], y=M[1,:], z=M[2,:],
+            mode='markers',
+            marker=dict(size=size, color=color),
+            showlegend=False,
+        ))
 
 
 #####################################################
 # Matrix visualization
 #####################################################
+
+def draw_mat22(fig, M, label=None):
+    """
+    Visualize a 2x2 matrix as a parallelogram on the z=0 plane.
+    """
+    u = _to_3d(M[:, 0])
+    v = _to_3d(M[:, 1])
+
+    draw_vec3d(fig, u, color='red', cone_radius=0.04)
+    draw_vec3d(fig, v, color='green', cone_radius=0.04)
+    draw_vec3d(fig, u, color='gray', start_from=v, alpha=0.25,
+               cone_ratio=0, cone_radius=0)
+    draw_vec3d(fig, v, color='gray', start_from=u, alpha=0.25,
+               cone_ratio=0, cone_radius=0)
+
+    if label is not None:
+        s = u + v
+        fig.add_trace(go.Scatter3d(
+            x=[s[0]], y=[s[1]], z=[s[2]],
+            mode='text', text=[label],
+            textfont=dict(size=12),
+            showlegend=False,
+        ))
+
 
 def draw_mat33(fig, M, label=None):
     """
@@ -182,12 +314,10 @@ def draw_mat33(fig, M, label=None):
     """
     u, v, w = M[:, 0], M[:, 1], M[:, 2]
 
-    # main column vectors
     draw_vec3d(fig, u, color='red')
     draw_vec3d(fig, v, color='green')
     draw_vec3d(fig, w, color='blue')
 
-    # ghost edges (parallelepiped wireframe)
     ghost = [
         (u, v), (u, w), (u, v+w),
         (v, u), (v, w), (v, u+w),
@@ -204,6 +334,31 @@ def draw_mat33(fig, M, label=None):
             mode='text', text=[label],
             textfont=dict(size=12),
             showlegend=False,
+        ))
+
+
+def draw_space_mat22(fig, M, label=None, color='gray', alpha=0.2):
+    """
+    Draw the transformed grid space of a 2x2 matrix on the z=0 plane.
+    """
+    draw_mat22(fig, M, label=label)
+    u = _to_3d(M[:, 0])
+    v = _to_3d(M[:, 1])
+
+    for i in range(-10, 10):
+        s1 = u * i + v * (-10)
+        e1 = s1 + v * 20
+        fig.add_trace(go.Scatter3d(
+            x=[s1[0], e1[0]], y=[s1[1], e1[1]], z=[s1[2], e1[2]],
+            mode='lines', line=dict(color=color, width=1),
+            opacity=alpha, showlegend=False, hoverinfo='skip',
+        ))
+        s2 = v * i + u * (-10)
+        e2 = s2 + u * 20
+        fig.add_trace(go.Scatter3d(
+            x=[s2[0], e2[0]], y=[s2[1], e2[1]], z=[s2[2], e2[2]],
+            mode='lines', line=dict(color=color, width=1),
+            opacity=alpha, showlegend=False, hoverinfo='skip',
         ))
 
 
@@ -237,13 +392,6 @@ def draw_polygons(fig, polygon_list, facecolors, alpha=0.8):
 def draw_circle_3d(fig, center, normal, radius, color='blue', alpha=0.3, n_segments=64):
     """
     Draw a filled circle in 3D space.
-    Args:
-        fig      : plotly Figure
-        center   : (x,y,z) center point
-        normal   : (x,y,z) normal vector of the circle plane
-        radius   : radius
-        color    : fill color
-        alpha    : opacity
     """
     center = np.array(center, dtype=float)
     normal = np.array(normal, dtype=float)
@@ -260,7 +408,6 @@ def draw_circle_3d(fig, center, normal, radius, color='blue', alpha=0.3, n_segme
     theta = np.linspace(0, 2*np.pi, n_segments+1)[:-1]
     ring = np.array([center + radius*(np.cos(t)*t1 + np.sin(t)*t2) for t in theta])
 
-    # fan triangulation from center
     verts = np.vstack([center.reshape(1,3), ring])
     n = len(ring)
     i_list = [0]*n
@@ -274,7 +421,6 @@ def draw_circle_3d(fig, center, normal, radius, color='blue', alpha=0.3, n_segme
         showlegend=False,
     ))
 
-    # circle edge outline
     ring_closed = np.vstack([ring, ring[0:1]])
     fig.add_trace(go.Scatter3d(
         x=ring_closed[:,0], y=ring_closed[:,1], z=ring_closed[:,2],
@@ -283,6 +429,17 @@ def draw_circle_3d(fig, center, normal, radius, color='blue', alpha=0.3, n_segme
         opacity=min(alpha + 0.3, 1.0),
         showlegend=False,
     ))
+
+
+def draw_circle_2d(fig, center=(0,0), radius=1.0, color='blue', alpha=0.5, n_segments=64):
+    """
+    Draw a circle on the z=0 plane.
+    """
+    draw_circle_3d(fig,
+                   center=_to_3d(center),
+                   normal=np.array([0, 0, 1]),
+                   radius=radius,
+                   color=color, alpha=alpha, n_segments=n_segments)
 
 
 #####################################################
@@ -302,11 +459,9 @@ def draw_plane(fig, p1, p2, p3, r=1, triangle_color='cyan', circle_color='yellow
     centroid = (p1 + p2 + p3) / 3.0
     normal = np.cross(p2 - p1, p3 - p1)
 
-    # circle on the plane
     draw_circle_3d(fig, centroid, normal, r,
                    color=circle_color, alpha=circle_alpha)
 
-    # triangle
     fig.add_trace(go.Mesh3d(
         x=[p1[0], p2[0], p3[0]],
         y=[p1[1], p2[1], p3[1]],
@@ -316,7 +471,6 @@ def draw_plane(fig, p1, p2, p3, r=1, triangle_color='cyan', circle_color='yellow
         showlegend=False,
     ))
 
-    # triangle edges
     for a, b in [(p1,p2), (p2,p3), (p3,p1)]:
         fig.add_trace(go.Scatter3d(
             x=[a[0],b[0]], y=[a[1],b[1]], z=[a[2],b[2]],
@@ -325,7 +479,6 @@ def draw_plane(fig, p1, p2, p3, r=1, triangle_color='cyan', circle_color='yellow
             showlegend=False,
         ))
 
-    # vertex labels
     for pt, name in zip([p1, p2, p3], ['P1', 'P2', 'P3']):
         fig.add_trace(go.Scatter3d(
             x=[pt[0]], y=[pt[1]], z=[pt[2]],
@@ -397,16 +550,15 @@ def draw_bounding_sphere(fig, center, radius, color='blue', alpha=0.3):
 def _box_mesh(vertices):
     """Create Mesh3d trace for a box defined by 8 vertices."""
     faces = [
-        [0, 1, 2, 3],  # bottom
-        [4, 5, 6, 7],  # top
-        [0, 1, 5, 4],  # front
-        [2, 3, 7, 6],  # back
-        [0, 3, 7, 4],  # left
-        [1, 2, 6, 5],  # right
+        [0, 1, 2, 3],
+        [4, 5, 6, 7],
+        [0, 1, 5, 4],
+        [2, 3, 7, 6],
+        [0, 3, 7, 4],
+        [1, 2, 6, 5],
     ]
     i_list, j_list, k_list = [], [], []
     for f in faces:
-        # split quad into two triangles
         i_list.append(f[0]); j_list.append(f[1]); k_list.append(f[2])
         i_list.append(f[0]); j_list.append(f[2]); k_list.append(f[3])
     return i_list, j_list, k_list
@@ -472,7 +624,6 @@ def draw_obb(fig, center, half_extents, rotation, color='orange', alpha=0.2):
         showlegend=False,
     ))
 
-    # local axes
     axis_names = ['u', 'v', 'w']
     axis_colors = ['red', 'green', 'blue']
     for idx in range(3):
