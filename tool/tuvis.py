@@ -48,13 +48,13 @@ def figure2d(x=[-1,1], y=[-1,1], title='', width=600, height=600,
         fig.add_trace(go.Scatter3d(
             x=[gx, gx], y=[y[0], y[1]], z=[0, 0],
             mode='lines', line=dict(color='lightgray', width=1),
-            opacity=0.3, showlegend=False, hoverinfo='skip',
+            opacity=0.6, showlegend=False, hoverinfo='skip',
         ))
     for gy in range(int(np.ceil(y[0])), int(np.floor(y[1])) + 1):
         fig.add_trace(go.Scatter3d(
             x=[x[0], x[1]], y=[gy, gy], z=[0, 0],
             mode='lines', line=dict(color='lightgray', width=1),
-            opacity=0.3, showlegend=False, hoverinfo='skip',
+            opacity=0.6, showlegend=False, hoverinfo='skip',
         ))
 
     zspan = max(x[1]-x[0], y[1]-y[0]) * 0.01
