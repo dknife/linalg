@@ -115,6 +115,15 @@ def setCam(fig, eye, target=(0,0,0), up=(0,0,1)):
 
 
 #####################################################
+# Utility
+#####################################################
+
+def _dash(lineType):
+    """Convert lineType string to plotly dash value."""
+    return {'solid': 'solid', 'dotted': 'dot', 'dashed': 'dash'}.get(lineType, 'solid')
+
+
+#####################################################
 # Vectors
 #####################################################
 
@@ -158,7 +167,7 @@ def _to_3d(v):
 
 
 def draw_vec2d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
-               cone_ratio=0.12, cone_radius=0.04):
+               cone_ratio=0.12, cone_radius=0.04, lineType='solid'):
     """
     Draw a 2D vector arrow on the z=0 plane.
     Args:
@@ -168,6 +177,7 @@ def draw_vec2d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
         start_from : origin point (default: [0,0])
         alpha      : opacity
         label      : text label at midpoint
+        lineType   : 'solid' | 'dotted' | 'dashed'
     """
     v3 = _to_3d(v)
     if start_from is None:
@@ -175,11 +185,11 @@ def draw_vec2d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
     else:
         s3 = _to_3d(start_from)
     draw_vec3d(fig, v3, color=color, start_from=s3, alpha=alpha, label=label,
-               cone_ratio=cone_ratio, cone_radius=cone_radius)
+               cone_ratio=cone_ratio, cone_radius=cone_radius, lineType=lineType)
 
 
 def draw_vec3d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
-               cone_ratio=0.12, cone_radius=0.06):
+               cone_ratio=0.12, cone_radius=0.06, lineType='solid'):
     """
     Draw a 3D vector arrow (line + cone arrowhead).
     Args:
@@ -191,6 +201,7 @@ def draw_vec3d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
         label      : text label at midpoint
         cone_ratio : fraction of vector length used for cone head
         cone_radius: radius of the cone base
+        lineType   : 'solid' | 'dotted' | 'dashed'
     """
     v = np.array(v, dtype=float)
     if start_from is None:
@@ -212,7 +223,7 @@ def draw_vec3d(fig, v, color='red', start_from=None, alpha=1.0, label=None,
         y=[start_from[1], cone_base[1]],
         z=[start_from[2], cone_base[2]],
         mode='lines',
-        line=dict(color=color, width=4),
+        line=dict(color=color, width=4, dash=_dash(lineType)),
         opacity=alpha,
         showlegend=False,
     ))
@@ -389,7 +400,8 @@ def draw_polygons(fig, polygon_list, facecolors, alpha=0.8):
         ))
 
 
-def draw_circle_3d(fig, center, normal, radius, color='blue', alpha=0.3, n_segments=64):
+def draw_circle_3d(fig, center, normal, radius, color='blue', alpha=0.3,
+                   n_segments=64, lineType='solid'):
     """
     Draw a filled circle in 3D space.
     """
@@ -425,13 +437,14 @@ def draw_circle_3d(fig, center, normal, radius, color='blue', alpha=0.3, n_segme
     fig.add_trace(go.Scatter3d(
         x=ring_closed[:,0], y=ring_closed[:,1], z=ring_closed[:,2],
         mode='lines',
-        line=dict(color=color, width=3),
+        line=dict(color=color, width=3, dash=_dash(lineType)),
         opacity=min(alpha + 0.3, 1.0),
         showlegend=False,
     ))
 
 
-def draw_circle_2d(fig, center=(0,0), radius=1.0, color='blue', alpha=0.5, n_segments=64):
+def draw_circle_2d(fig, center=(0,0), radius=1.0, color='blue', alpha=0.5,
+                   n_segments=64, lineType='solid'):
     """
     Draw a circle on the z=0 plane.
     """
@@ -439,7 +452,8 @@ def draw_circle_2d(fig, center=(0,0), radius=1.0, color='blue', alpha=0.5, n_seg
                    center=_to_3d(center),
                    normal=np.array([0, 0, 1]),
                    radius=radius,
-                   color=color, alpha=alpha, n_segments=n_segments)
+                   color=color, alpha=alpha, n_segments=n_segments,
+                   lineType=lineType)
 
 
 #####################################################
@@ -447,7 +461,7 @@ def draw_circle_2d(fig, center=(0,0), radius=1.0, color='blue', alpha=0.5, n_seg
 #####################################################
 
 def draw_line(fig, p1, p2, label=None, type='segment', color='red', alpha=0.5,
-              scale=2, cone_radius=0.05):
+              scale=2, cone_radius=0.05, lineType='solid'):
     """
     Draw a line defined by two points.
     Args:
@@ -460,6 +474,7 @@ def draw_line(fig, p1, p2, label=None, type='segment', color='red', alpha=0.5,
         alpha : opacity
         scale : extension multiplier for ray/line (default: 2)
         cone_radius : arrowhead size for ray/line endpoints
+        lineType    : 'solid' | 'dotted' | 'dashed'
     """
     p1 = _to_3d(p1)
     p2 = _to_3d(p2)
@@ -490,7 +505,7 @@ def draw_line(fig, p1, p2, label=None, type='segment', color='red', alpha=0.5,
         y=[start[1], end[1]],
         z=[start[2], end[2]],
         mode='lines',
-        line=dict(color=color, width=4),
+        line=dict(color=color, width=4, dash=_dash(lineType)),
         opacity=alpha,
         showlegend=False,
     ))
@@ -548,7 +563,7 @@ def draw_line(fig, p1, p2, label=None, type='segment', color='red', alpha=0.5,
 #####################################################
 
 def draw_plane(fig, p1, p2, p3, r=1, triangle_color='cyan', circle_color='yellow',
-               triangle_alpha=0.7, circle_alpha=0.3):
+               triangle_alpha=0.7, circle_alpha=0.3, lineType='solid'):
     """
     Draw a triangle (p1, p2, p3) and a circle of radius r on the same plane,
     centered at the centroid.
@@ -561,7 +576,7 @@ def draw_plane(fig, p1, p2, p3, r=1, triangle_color='cyan', circle_color='yellow
     normal = np.cross(p2 - p1, p3 - p1)
 
     draw_circle_3d(fig, centroid, normal, r,
-                   color=circle_color, alpha=circle_alpha)
+                   color=circle_color, alpha=circle_alpha, lineType=lineType)
 
     fig.add_trace(go.Mesh3d(
         x=[p1[0], p2[0], p3[0]],
@@ -576,7 +591,7 @@ def draw_plane(fig, p1, p2, p3, r=1, triangle_color='cyan', circle_color='yellow
         fig.add_trace(go.Scatter3d(
             x=[a[0],b[0]], y=[a[1],b[1]], z=[a[2],b[2]],
             mode='lines',
-            line=dict(color='black', width=3),
+            line=dict(color='black', width=3, dash=_dash(lineType)),
             showlegend=False,
         ))
 
@@ -595,15 +610,16 @@ def draw_plane(fig, p1, p2, p3, r=1, triangle_color='cyan', circle_color='yellow
 # Plane (point + normal)
 #####################################################
 
-def draw_plane_from_normal(fig, p, n, r=3, plane_color='yellow', plane_alpha=0.2):
+def draw_plane_from_normal(fig, p, n, r=3, plane_color='yellow', plane_alpha=0.2,
+                           lineType='solid'):
     """
     Draw a circular plane through point p with normal n, plus the normal arrow.
     """
     p = np.array(p, dtype=float)
     n = np.array(n, dtype=float)
 
-    draw_circle_3d(fig, p, n, r, color=plane_color, alpha=plane_alpha)
-    draw_vec3d(fig, n, color='red', start_from=p, label='n')
+    draw_circle_3d(fig, p, n, r, color=plane_color, alpha=plane_alpha, lineType=lineType)
+    draw_vec3d(fig, n, color='red', start_from=p, label='n', lineType=lineType)
 
     fig.add_trace(go.Scatter3d(
         x=[p[0]], y=[p[1]], z=[p[2]],
